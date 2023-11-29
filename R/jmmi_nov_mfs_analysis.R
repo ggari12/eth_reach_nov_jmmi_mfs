@@ -14,8 +14,8 @@ data <- read.csv('inputs/JMMI_data_ETH.csv', na.strings = '')
 ###### USER INPUT - change the lines below to match the administrative levels in the country of interest
 ###################################################
 data <- data %>%  rename('adm1' = 'adm1_region.name',
-                        'adm2' = 'adm2_zone.name',
-                        'adm3' = 'adm3_woreda.name')
+                         'adm2' = 'adm2_zone.name',
+                         'adm3' = 'adm3_woreda.name')
 ###################################################
 
 #### ACCESSIBILITY #### -----------------------------------------
@@ -29,7 +29,7 @@ mfs_access_physical <- data %>%
                                                        & -contains('no_issues') 
                                                        & -contains('dont_know')
                                                        & -contains('hazardous_buildings')
-                                                       & -contains('hazardous_roads'))) > 0,1,0)) %>% 
+                                                       & -contains('hazardous_roads')), na.rm = T) > 0,1,0)) %>% 
   group_by(adm1,adm2,adm3) %>% 
   summarise(physical_access = round(sum(physical_access_true)/n()*100,1)) %>% 
   mutate(physical_access_score = case_when(physical_access<5 ~ 8,
@@ -148,7 +148,7 @@ mfs_afford_price <- data %>%
 mfs_afford_finance <- data %>%  
   mutate(afford_finance_true = if_else(rowSums(select(.,contains('affordability_financial.') 
                                                       & -contains('no_issues') 
-                                                      & -contains('dont_know'))) > 0,1,0)) %>% 
+                                                      & -contains('dont_know')), na.rm = T) > 0,1,0)) %>% 
   group_by(adm1,adm2,adm3) %>% 
   summarise(afford_finance = round(sum(afford_finance_true)/n()*100,1)) %>% 
   mutate(afford_finance_score = case_when(afford_finance<10 ~ 9,
@@ -211,7 +211,8 @@ mfs_resil_restock <- mfs_resil_restock %>%
 #RE.3
 #% of vendors selecting "Yes"
 
-mfs_resil_supply_diverse <- data %>%  
+mfs_resil_supply_diverse <- data %>% 
+  mutate(nfi_supplier_single = hygiene_supply_issues) %>% # create & rename new variable to ease analysis
   select(adm1, adm2, adm3, ends_with('_single')) %>% 
   mutate(across(ends_with('_single'), ~if_else(. == 'yes',1,0))) %>% 
   group_by(adm1,adm2,adm3) %>% 
@@ -225,10 +226,10 @@ mfs_resil_supply_diverse <- data %>%
                                               #food_supplier_imported_single  > 50 ~ 1,
                                               #food_supplier_imported_single  > 25 ~ 2,
                                               #food_supplier_imported_single  <= 25 ~ 3),
-         #nfi_supplier_single = case_when(nfi_supplier_single > 75 ~ 0,
-                                      #nfi_supplier_single > 50 ~ 1,
-                                      #nfi_supplier_single > 25 ~ 2,
-                                      #nfi_supplier_single <= 25 ~ 3),
+         nfi_supplier_single = case_when(nfi_supplier_single > 75 ~ 0,
+                                      nfi_supplier_single > 50 ~ 1,
+                                      nfi_supplier_single > 25 ~ 2,
+                                      nfi_supplier_single <= 25 ~ 3),
          
          resil_supply_diverse_score = rowSums(across(ends_with('_single')), na.rm = T)) #sum rows to give final score - in ETB max score is 9 (3 x 3 categories)
 
@@ -238,7 +239,7 @@ mfs_resil_supply_diverse <- data %>%
 mfs_resil_supply <- data %>%  
   mutate(resilience_supply_true = if_else(rowSums(select(.,contains('resilience_supply_chain.') 
                                                       & -contains('no_difficulties') 
-                                                      & -contains('dont_know'))) > 0,1,0)) %>% 
+                                                      & -contains('dont_know')), na.rm = T) > 0,1,0)) %>% 
   group_by(adm1,adm2,adm3) %>% 
   summarise(resil_supply = round(sum(resilience_supply_true)/n()*100,1)) %>% 
   mutate(resil_supply_score = case_when(resil_supply<5 ~ 12,
