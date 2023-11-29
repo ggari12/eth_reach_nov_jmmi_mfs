@@ -13,9 +13,9 @@ data <- read.csv('inputs/JMMI_data_ETH.csv', na.strings = '')
 
 ###### USER INPUT - change the lines below to match the administrative levels in the country of interest
 ###################################################
-data <- data %>%  rename('adm1' = 'adm1_region',
-                        'adm2' = 'adm2_zone',
-                        'adm3' = 'adm3_woreda')
+data <- data %>%  rename('adm1' = 'adm1_region.name',
+                        'adm2' = 'adm2_zone.name',
+                        'adm3' = 'adm3_woreda.name')
 ###################################################
 
 #### ACCESSIBILITY #### -----------------------------------------
@@ -175,10 +175,8 @@ mfs_afford_price_vol <- data %>%
 # For each vendor, subtract # restocking days from # days of remaining stock for each item or category; aggregate by taking the median of these vendor-level calculations
 
 # get names of items with stock data
-stock_items <- data %>%  
-  select(ends_with('_stock_days'))
-
-#%>%  colnames() %>%  str_replace_all('_stock_current','') %>%  str_replace_all('_available','')
+stock_items <- data %>% 
+  select(ends_with('_stock_current') & -contains('wholesale')) %>% colnames() %>% str_replace_all('_stock_current','') %>% str_replace_all('_available','')
 
 #create empty dataset
 mfs_resil_restock <- data %>%  select(adm1,adm2,adm3)
@@ -324,10 +322,3 @@ mfs <- mfs %>%
 write.csv(mfs, file = 'outputs/mfs.csv', row.names = F)
 
 ###############################################################################
-
-
-
-
-
-
-
