@@ -320,6 +320,6 @@ mfs <- mfs %>%
 
 #export
 
-write.csv(mfs, file = 'outputs/mfs.csv', row.names = F)
+write.csv(mfs, file = 'outputs/mfs_eth.csv', row.names = F)
 
 ###############################################################################
