@@ -292,7 +292,6 @@ mfs_infra_payment <- data %>%
                                          infra_payment>25 ~ 1,
                                          infra_payment<=25 ~ 0))
 
-
 #======================================== CALCULATE MFS =============================================
 
 mfs_data_list <- list(mfs_access_physical,mfs_access_roads,mfs_access_social,mfs_access_safety, #accessibility pillar - max 17
