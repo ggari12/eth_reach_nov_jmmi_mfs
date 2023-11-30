@@ -4,9 +4,9 @@
 ## Date: 01/05/2023
 ## Adopted by: Getu GARI - getu.gari@reach-initiatives.org
 
+rm(list=ls())
 library(tidyverse)
 library(here)
-rm(list=ls())
 
 #import clean data
 data <- read.csv('inputs/JMMI_data_ETH.csv', na.strings = '')
@@ -43,7 +43,7 @@ mfs_access_physical <- data %>%
 
 mfs_access_roads <- data %>%  
   group_by(adm1,adm2,adm3) %>% 
-  summarise(physical_roads_access = round(sum(accessibility_physical.hazardous_roads)/n()*100,1)) %>% 
+  summarise(physical_roads_access = round(sum(accessibility_physical.hazardous_roads, na.rm = T)/n()*100,1)) %>% 
   mutate(physical_roads_access_score = case_when(physical_roads_access<5 ~ 4,
                                                  physical_roads_access>=5 & physical_roads_access<10 ~ 3,
                                                  physical_roads_access>=10 & physical_roads_access<25 ~ 2,
@@ -159,8 +159,8 @@ mfs_afford_finance <- data %>%
 #AF.3
 #% of vendors selecting "Yes"
 
-mfs_afford_price_vol <- data %>%  
-  mutate(affordability_price_volatility = 'estimate_price | estimate_price_nfi') %>% # create new variable, NOTE GG: This indicators will be modified by Dec round DC
+mfs_afford_price_vol <- data %>% 
+  mutate(affordability_price_volatility = 'estimate_price' == 'yes'| 'estimate_price_nfi' == 'yes') %>% # create new variable, NOTE GG: This indicators will be modified by Dec round DC
   mutate(affordability_price_volatility = if_else(affordability_price_volatility == 'yes',1,0)) %>% 
   group_by(adm1,adm2,adm3) %>% 
   summarise(afford_price_vol = round(sum(affordability_price_volatility)/n()*100,1)) %>% 
@@ -255,7 +255,7 @@ mfs_resil_supply <- data %>%
 
 mfs_infra_facilities <- data %>%  
   group_by(adm1, adm2, adm3) %>% 
-  summarise(infra_facilities = round(sum(accessibility_physical.hazardous_buildings)/n()*100,1)) %>% 
+  summarise(infra_facilities = round(sum(accessibility_physical.hazardous_buildings, na.rm = T)/n()*100,1)) %>% 
   mutate(infra_facilities_score = case_when(infra_facilities<5 ~ 4,
                                             infra_facilities>=5 & infra_facilities<10 ~ 3,
                                             infra_facilities>=10 & infra_facilities<25 ~ 2,
@@ -282,9 +282,9 @@ mfs_infra_storage <- data %>%
 #% of vendors selecting an option other than "Cash (local currency)", "Cash (foreign currencies)", or "Prefer not to answer"
 
 mfs_infra_payment <- data %>%  
-  mutate(infra_payment_true = if_else(rowSums(select(.,contains('modalities_which.') 
+  mutate(infra_payment_true = if_else(rowSums(select(.,contains('payment_modalities.') 
                                                          & -contains('cash') 
-                                                         & -contains('dont_know'))) > 0,1,0)) %>% 
+                                                         & -contains('dk'))) > 0,1,0)) %>% 
   group_by(adm1, adm2, adm3) %>% 
   summarise(infra_payment = round(sum(infra_payment_true, na.rm = T)/n()*100,1)) %>% 
   mutate(infra_payment_score = case_when(infra_payment>75 ~ 3,
