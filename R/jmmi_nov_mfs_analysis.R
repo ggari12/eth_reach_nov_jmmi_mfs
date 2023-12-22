@@ -148,7 +148,8 @@ mfs_afford_price <- data %>%
 mfs_afford_finance <- data %>%  
   mutate(afford_finance_true = if_else(rowSums(select(.,contains('affordability_financial.') 
                                                       & -contains('no_issues') 
-                                                      & -contains('dont_know')), na.rm = T) > 0,1,0)) %>% 
+                                                      & -contains('dont_know')
+                                                      & -contains('dwta')), na.rm = T) > 0,1,0)) %>% 
   group_by(adm1,adm2,adm3) %>% 
   summarise(afford_finance = round(sum(afford_finance_true)/n()*100,1)) %>% 
   mutate(afford_finance_score = case_when(afford_finance<10 ~ 9,
@@ -160,8 +161,9 @@ mfs_afford_finance <- data %>%
 #% of vendors selecting "Yes"
 
 mfs_afford_price_vol <- data %>% 
-  mutate(affordability_price_volatility = 'estimate_price' == 'yes'| 'estimate_price_nfi' == 'yes') %>% # create new variable, NOTE GG: This indicators will be modified by Dec round DC
-  mutate(affordability_price_volatility = if_else(affordability_price_volatility == 'yes',1,0)) %>% 
+  mutate(affordability_price_volatility = case_when(estimate_price == 'no' | estimate_price_nfi == 'no' ~ 1,
+                                                    is.na(estimate_price) & is.na(estimate_price_nfi) ~ NA_integer_,
+                                                    TRUE ~ 0)) %>% # create new variable, NOTE GG: This indicators will be modified by Dec round DC
   group_by(adm1,adm2,adm3) %>% 
   summarise(afford_price_vol = round(sum(affordability_price_volatility)/n()*100,1)) %>% 
   mutate(afford_price_vol_score = case_when(afford_price_vol<10 ~ 6,
@@ -176,7 +178,7 @@ mfs_afford_price_vol <- data %>%
 
 # get names of items with stock data
 stock_items <- data %>% 
-  select(ends_with('_stock_current') & -contains('wholesale')) %>% colnames() %>% str_replace_all('_stock_current','') %>% str_replace_all('_available','')
+  select(ends_with('_stock_days')) %>% colnames() %>% str_replace_all('_stock_days','')
 
 #create empty dataset
 mfs_resil_restock <- data %>%  select(adm1,adm2,adm3)
@@ -239,7 +241,8 @@ mfs_resil_supply_diverse <- data %>%
 mfs_resil_supply <- data %>%  
   mutate(resilience_supply_true = if_else(rowSums(select(.,contains('resilience_supply_chain.') 
                                                       & -contains('no_difficulties') 
-                                                      & -contains('dont_know')), na.rm = T) > 0,1,0)) %>% 
+                                                      & -contains('dont_know')
+                                                      & -contains('dwta')), na.rm = T) > 0,1,0)) %>% 
   group_by(adm1,adm2,adm3) %>% 
   summarise(resil_supply = round(sum(resilience_supply_true)/n()*100,1)) %>% 
   mutate(resil_supply_score = case_when(resil_supply<5 ~ 12,
@@ -269,8 +272,7 @@ mfs_infra_storage <- data %>%
   mutate(infrastructure_storage = locked_storage) %>% # rename the indicators to ease analysis
   mutate(infrastructure_storage = if_else(infrastructure_storage == 'no_outside_marketplace' |
                                             infrastructure_storage == 'no_at_home' |
-                                            infrastructure_storage == 'other' |
-                                            infrastructure_storage == 'dwta', 1,0)) %>% 
+                                            infrastructure_storage == 'other', 1,0)) %>% 
   group_by(adm1, adm2, adm3) %>% 
   summarise(infra_storage = round(sum(infrastructure_storage)/n()*100,1)) %>% 
   mutate(infra_storage_score = case_when(infra_storage<10 ~ 3,
@@ -284,7 +286,8 @@ mfs_infra_storage <- data %>%
 mfs_infra_payment <- data %>%  
   mutate(infra_payment_true = if_else(rowSums(select(.,contains('payment_modalities.') 
                                                          & -contains('cash') 
-                                                         & -contains('dk'))) > 0,1,0)) %>% 
+                                                         & -contains('dk')
+                                                         & -contains('dwta'))) > 0,1,0)) %>% 
   group_by(adm1, adm2, adm3) %>% 
   summarise(infra_payment = round(sum(infra_payment_true, na.rm = T)/n()*100,1)) %>% 
   mutate(infra_payment_score = case_when(infra_payment>75 ~ 3,
@@ -314,7 +317,7 @@ mfs <- mfs %>%
          mfs_infrastructure_pillar_score = (rowSums(across(contains('infra'))) /10) *10,
          
          #calculate final score
-         mfs_score = rowSums(across(contains('_pillar_score')))) %>% 
+         mfs_score = rowSums(across(contains('_pillar_score')), na.rm = T)) %>% 
   select(adm1, adm2, adm3, contains(c('_pillar_score', 'mfs_score')))
 
 #export
