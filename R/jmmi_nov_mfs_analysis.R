@@ -119,9 +119,15 @@ price_score_fun <- function(item_median){
   return (result)
 }
 
+#select concerned columns
+selection_price <- data%>%
+  select(adm1,adm2,adm3,contains('_price_per_unit'))
+
+#remove those having no measurements
+selection_price <- selection_price[, !sapply(selection_price, function(col) all(is.na(col)))]
+
 #create national median dataset
-median_national <- data%>% 
-  select(adm1,adm2,adm3,contains('_price')) %>%  # NB does not include currency prices
+median_national <- selection_price %>%  # NB does not include currency prices 
   lapply(median, na.rm=T) %>%  #ignore warning messages- these are from trying to calculate the median on the adm1, adm2 and adm3 columns
   as.data.frame() %>% 
   mutate(across(c(adm1, adm2, adm3), as.character))
@@ -132,7 +138,13 @@ afford_scale <- 12 # set the max score for the affordability price levels - the 
 
 #calculate scores
 mfs_afford_price <- data %>% 
-  select(adm1,adm2,adm3,contains('_price_per_unit'),-contains('wholesale')) %>% 
+  select(adm1,adm2,adm3,contains('_price_per_unit'),-contains('wholesale'),
+                                                    -contains('bleach_price_per_unit'),
+                                                    -contains('camel_meat_price_per_unit'),
+                                                    -contains('mutton_price_per_unit'),
+                                                    -contains('water_price_per_unit'),
+                                                    -contains('water_5km_price_per_unit'),
+                                                    -contains('water_10km_price_per_unit')) %>% 
   group_by(adm1, adm2, adm3) %>% 
   summarise(across(everything(), ~median(., na.rm = TRUE))) %>% 
   ungroup() %>% 
@@ -313,7 +325,7 @@ mfs <- mfs %>%
   mutate(mfs_accessibility_pillar_score = (rowSums(across(contains('access_score'))) /17) *25,
          mfs_availability_pillar_score = (availability_score /(n_items*3)) *30,
          mfs_affordability_pillar_score = (rowSums(across(contains('afford'))) /(afford_scale+15)) *15,
-         mfs_resilience_pillar_score = (rowSums(across(contains('resil'))) /(length(stock_items)*3)) *20,
+         mfs_resilience_pillar_score = (rowSums(across(contains('resil'))) /(length(stock_items)*3 + 6 + 12)) *20,
          mfs_infrastructure_pillar_score = (rowSums(across(contains('infra'))) /10) *10,
          
          #calculate final score
